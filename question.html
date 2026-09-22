@@ -1,0 +1,1457 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trắc Nghiệm Lịch Sử Đảng</title>
+    <!-- STREAMING_CHUNK:Styling the layout... -->
+    <style>
+      :root {
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --success: #10b981;
+        --success-bg: #d1fae5;
+        --danger: #ef4444;
+        --danger-bg: #fee2e2;
+        --bg-color: #f3f4f6;
+        --text-main: #1f2937;
+        --text-muted: #6b7280;
+      }
+
+      body {
+        font-family:
+          "Segoe UI",
+          system-ui,
+          -apple-system,
+          sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: var(--bg-color);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+
+      .app-container {
+        width: 100%;
+        max-width: 900px;
+        height: 85vh;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        margin: 20px;
+      }
+
+      .header {
+        background: var(--primary);
+        color: white;
+        padding: 20px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 1.2em;
+        font-weight: 600;
+      }
+
+      .score-badge {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.9em;
+      }
+
+      #slides-container {
+        flex: 1;
+        position: relative;
+        overflow-y: auto;
+        padding: 40px;
+      }
+
+      /* STREAMING_CHUNK:Styling slides and options... */
+      .slide {
+        display: none;
+        flex-direction: column;
+        animation: slideIn 0.4s ease-out forwards;
+      }
+
+      .slide.active {
+        display: flex;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateX(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      .question {
+        font-size: 1.4em;
+        color: var(--text-main);
+        margin-bottom: 30px;
+        font-weight: 600;
+        line-height: 1.5;
+      }
+
+      .options {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .option {
+        background-color: #f8fafc;
+        padding: 16px 24px;
+        border-radius: 10px;
+        border: 2px solid #e2e8f0;
+        cursor: pointer;
+        font-size: 1.1em;
+        color: var(--text-main);
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: flex-start;
+      }
+
+      .option:hover:not(.disabled) {
+        border-color: var(--primary);
+        background-color: #eff6ff;
+        transform: translateY(-2px);
+      }
+
+      .option .prefix {
+        font-weight: bold;
+        margin-right: 15px;
+        color: var(--primary);
+        min-width: 25px;
+      }
+
+      /* States for answers */
+      .option.disabled {
+        cursor: default;
+        pointer-events: none;
+      }
+
+      .option.correct {
+        background-color: var(--success-bg);
+        border-color: var(--success);
+        color: #065f46;
+      }
+
+      .option.correct .prefix {
+        color: var(--success);
+      }
+
+      .option.wrong {
+        background-color: var(--danger-bg);
+        border-color: var(--danger);
+        color: #991b1b;
+      }
+
+      .option.wrong .prefix {
+        color: var(--danger);
+      }
+
+      .option.faded {
+        opacity: 0.5;
+      }
+
+      /* STREAMING_CHUNK:Styling controls... */
+      .controls {
+        padding: 20px 30px;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      button {
+        background-color: var(--primary);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 1em;
+        font-weight: 500;
+        cursor: pointer;
+        transition:
+          background 0.3s,
+          opacity 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      button:hover:not(:disabled) {
+        background-color: var(--primary-hover);
+      }
+
+      button:disabled {
+        background-color: var(--text-muted);
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .progress-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .progress-text {
+        font-weight: 600;
+        color: var(--text-main);
+      }
+
+      .progress-bar-bg {
+        width: 150px;
+        height: 6px;
+        background: #e2e8f0;
+        border-radius: 3px;
+        overflow: hidden;
+      }
+
+      .progress-bar-fill {
+        height: 100%;
+        background: var(--primary);
+        width: 0%;
+        transition: width 0.3s ease;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-container">
+      <div class="header">
+        <div>Ôn Tập Lịch Sử Đảng</div>
+        <div class="score-badge">Đáp án đúng: <span id="score">0</span></div>
+      </div>
+
+      <div id="slides-container">
+        <!-- Slides content -->
+      </div>
+
+      <div class="controls">
+        <button id="prevBtn" onclick="prevSlide()" disabled>
+          &#10094; Trước
+        </button>
+        <div class="progress-container">
+          <span class="progress-text" id="progress-text">1 / 0</span>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progress-bar"></div>
+          </div>
+        </div>
+        <button id="nextBtn" onclick="nextSlide()">Tiếp &#10095;</button>
+      </div>
+    </div>
+
+    <!-- STREAMING_CHUNK:Loading question data... -->
+    <script>
+      const questionsData = [
+        // Ảnh 1
+        {
+          q: "Câu 151. Trong cách mạng Tháng Tám, thời cơ giành chính quyền chỉ tồn tại trong khoảng thời gian",
+          opt: [
+            {
+              p: "A",
+              t: "Từ khi Nhật đảo chính Pháp đến khi Nhật đầu hàng Đồng minh vô điều kiện",
+              c: false,
+            },
+            {
+              p: "B",
+              t: "Từ khi Nhật đảo chính Pháp đến trước khi quân Đồng minh vào Đông Dương giải giáp quân đội Nhật.",
+              c: false,
+            },
+            {
+              p: "C",
+              t: "Từ khi Nhật đầu hàng Đồng minh vô điều kiện đến trước khi quân Đồng minh vào Đông Dương giải giáp quân đội Nhật.",
+              c: true,
+            },
+            {
+              p: "D",
+              t: "Từ khi Nhật đầu hàng Đồng minh vô điều kiện đến trước khi Pháp quay trở lại xâm lược Việt Nam lần thứ hai",
+              c: false,
+            },
+          ],
+        },
+        {
+          q: "Câu 152. Lệnh Tổng khởi nghĩa trong cả nước của Ủy ban Khởi nghĩa toàn quốc nằm trong nội dung văn bản nào?",
+          opt: [
+            {
+              p: "A",
+              t: "Kết luận của Hội nghị quân sự cách mạng Bắc Kỳ",
+              c: false,
+            },
+            { p: "B", t: "Quân lệnh số 1", c: true },
+            { p: "C", t: "Nghị quyết Hội nghị toàn quốc", c: false },
+            { p: "D", t: "10 chính sách lớn của Việt Minh", c: false },
+          ],
+        },
+        {
+          q: "Câu 153. Khẩu hiệu đấu tranh trong Tổng khởi nghĩa Cách mạng Tháng Tám là:",
+          opt: [
+            {
+              p: "A",
+              t: "Thành lập chính quyền cách mạng của nhân dân Đông Dương",
+              c: false,
+            },
+            {
+              p: "B",
+              t: "Phản đối xâm lược! Hoàn toàn độc lập! Chính quyền nhân dân!",
+              c: false,
+            },
+            { p: "C", t: "Dân tộc trên hết, Tổ quốc trên hết", c: false },
+            { p: "D", t: "Đánh đuổi phát xít Nhật", c: true },
+          ],
+        },
+        {
+          q: "Câu 154. Cách mạng Tháng Tám chĩa mũi nhọn tấn công vào kẻ thù nào?",
+          opt: [
+            { p: "A", t: "Pháp - Nhật", c: false },
+            { p: "B", t: "Pháp - Nhật và chế độ phong kiến", c: false },
+            { p: "C", t: "Chế độ phong kiến", c: false },
+            { p: "D", t: "Phát xít Nhật", c: true },
+          ],
+        },
+        {
+          q: "Câu 155. Cách mạng Tháng Tám 1945 thành công ở Hà Nội vào thời gian nào?",
+          opt: [
+            { p: "A", t: "19/8/1945", c: true },
+            { p: "B", t: "23/8/1945", c: false },
+            { p: "C", t: "25/8/1945", c: false },
+            { p: "D", t: "2/9/1945", c: false },
+          ],
+        },
+        {
+          q: "Câu 156. Cách mạng Tháng Tám 1945 thành công ở Sài Gòn vào thời gian nào?",
+          opt: [
+            { p: "A", t: "19/8/1945", c: false },
+            { p: "B", t: "23/8/1945", c: false },
+            { p: "C", t: "25/8/1945", c: true },
+            { p: "D", t: "2/9/1945", c: false },
+          ],
+        },
+        {
+          q: "Câu 157. Ngày 30/8/1945 ghi dấu sự kiện lịch sử gì của dân tộc Việt Nam?",
+          opt: [
+            { p: "A", t: "Vua Bảo Đại thoái vị", c: true },
+            { p: "B", t: "Cách mạng Tháng Tám thành công", c: false },
+            {
+              p: "C",
+              t: "Tổng khởi nghĩa giành chính quyền ở Sài Gòn",
+              c: false,
+            },
+            {
+              p: "D",
+              t: "Tổng khởi nghĩa giành chính quyền ở Hà Nội",
+              c: false,
+            },
+          ],
+        },
+        {
+          q: "Câu 158. Trong thời gian bao lâu, Tổng khởi nghĩa Cách mạng Tháng Tám 1945 giành được chính quyền?",
+          opt: [
+            { p: "A", t: "10 ngày", c: false },
+            { p: "B", t: "15 ngày", c: true },
+            { p: "C", t: "20 ngày", c: false },
+            { p: "D", t: "25 ngày", c: false },
+          ],
+        },
+        {
+          q: "Câu 159. Vì sao từ ngày 14 đến ngày 18/8/1945, tuy chưa nhận được lệnh tổng khởi nghĩa nhưng đảng bộ nhiều địa phương đã phát động nhân dân nổi dậy khởi nghĩa?",
+          opt: [
+            {
+              p: "A",
+              t: "Do căn cứ vào tình hình thực tế của cách mạng thế giới.",
+              c: false,
+            },
+            {
+              p: "B",
+              t: "Do nắm vững tinh thần các nghị quyết, chỉ thị trước đó của Đảng",
+              c: true,
+            },
+            {
+              p: "C",
+              t: "Do mâu thuẫn dân tộc không thể điều hòa được nữa",
+              c: false,
+            },
+            {
+              p: "D",
+              t: "Do sự nhạy bén của đảng bộ các địa phương đó",
+              c: false,
+            },
+          ],
+        },
+        {
+          q: "Câu 160. Nhân tố chủ yếu nhất quyết định thắng lợi của Cách mạng Tháng Tám năm 1945?",
+          opt: [
+            { p: "A", t: "Mâu thuẫn dân tộc gay gắt", c: false },
+            { p: "B", t: "Sức mạnh của liên minh công nông", c: false },
+            { p: "C", t: "Sự lãnh đạo của Đảng", c: true },
+          ],
+        },
+
+        // Ảnh 2
+        {
+          q: "Câu 161. Đặc điểm nổi bật về hình thức, phương pháp giành chính quyền trong Cách mạng Tháng Tám năm 1945 ở Việt Nam là:",
+          opt: [
+            { p: "A", t: "Đấu tranh chính trị", c: false },
+            { p: "B", t: "Đấu tranh vũ trang", c: false },
+            {
+              p: "C",
+              t: "Đấu tranh chính trị kết hợp với đấu tranh vũ trang",
+              c: true,
+            },
+            { p: "D", t: "Đấu tranh công khai, hợp pháp", c: false },
+          ],
+        },
+        {
+          q: "Câu 162. Nội dung nào sau đây không phải là ý nghĩa của Cách mạng Tháng Tám năm 1945?",
+          opt: [
+            {
+              p: "A",
+              t: "Phá tan xiềng xích nô lệ của Pháp - Nhật và phong kiến, đem lại độc lập tự do cho dân tộc",
+              c: false,
+            },
+            {
+              p: "B",
+              t: "Mở ra một kỉ nguyên mới trong lịch sử dân tộc: độc lập dân tộc gắn liền với CNXH",
+              c: true,
+            },
+            {
+              p: "C",
+              t: "Đã góp phần làm phong phú thêm kho tàng lý luận của chủ nghĩa Mác - Lênin",
+              c: false,
+            },
+            {
+              p: "D",
+              t: "Chấm dứt sự tồn tại của chế độ quân chủ chuyên chế hàng nghìn năm, lập nên nước Việt Nam Dân chủ Cộng hòa",
+              c: false,
+            },
+          ],
+        },
+        {
+          q: "Câu 163. Luận điểm nào sau đây không phải là ý nghĩa đối với quốc tế của Cách mạng Tháng Tám năm 1945?",
+          opt: [
+            {
+              p: "A",
+              t: "Cách mạng Tháng Tám mở ra kỷ nguyên mới trong tiến trình lịch sử dân tộc, kỷ nguyên độc lập, tự do và hướng tới CNXH",
+              c: true,
+            },
+            {
+              p: "B",
+              t: "Cách mạng Tháng Tám không chỉ là chiến công của dân tộc Việt Nam mà còn là chiến công chung của các dân tộc thuộc địa đang đấu tranh vì độc lập tự do",
+              c: false,
+            },
+            {
+              p: "C",
+              t: "Cách mạng Tháng Tám chứng tỏ cuộc CMGPDT ở một nước thuộc địa do Đảng cộng sản lãnh đạo hoàn toàn có khả năng giành thắng lợi...",
+              c: false,
+            },
+            {
+              p: "D",
+              t: "Cách mạng Tháng Tám đã góp phần làm phong phú thêm kho tàng lý luận của chủ nghĩa Mác - Lênin về CMGPDT",
+              c: false,
+            },
+          ],
+        },
+        {
+          q: "Câu 164. Thắng lợi của Cách mạng Tháng Tám đã giải quyết thành công vấn đề cơ bản của một cuộc cách mạng xã hội là:",
+          opt: [
+            { p: "A", t: "Vấn đề chính quyền", c: true },
+            { p: "B", t: "Vấn đề ruộng đất", c: false },
+            { p: "C", t: "Vấn đề xóa bỏ áp bức bất công", c: false },
+            { p: "D", t: "Vấn đề dân sinh, dân chủ", c: false },
+          ],
+        },
+        {
+          q: "Câu 165. Thắng lợi của Cách mạng Tháng Tám năm 1945 chỉ ra trong cách mạng thuộc địa phải đặt nhiệm vụ nào lên hàng đầu?",
+          opt: [
+            { p: "A", t: "Nhiệm vụ giải phóng dân tộc", c: true },
+            { p: "B", t: "Nhiệm vụ cách mạng ruộng đất", c: false },
+            {
+              p: "C",
+              t: "Nhiệm vụ đánh đổ chế độ quân chủ chuyên chế",
+              c: false,
+            },
+            {
+              p: "D",
+              t: "Nhiệm vụ đấu tranh đòi dân sinh, dân chủ, cải thiện đời sống nhân dân",
+              c: false,
+            },
+          ],
+        },
+        {
+          q: "Câu 166. Luận điểm nào sau đây không đúng về mối quan hệ giữa hai nhiệm vụ độc lập dân tộc và cách mạng ruộng đất trong Cách mạng Tháng Tám năm 1945?",
+          opt: [
+            {
+              p: "A",
+              t: "Phải đặt nhiệm vụ giải phóng dân tộc lên hàng đầu",
+              c: false,
+            },
+            {
+              p: "B",
+              t: "Nhiệm vụ cách mạng ruộng đất cần tạm gác lại, thực hiện từng bước thích hợp nhằm phục vụ cho nhiệm vụ chống đế quốc",
+              c: false,
+            },
+            {
+              p: "C",
+              t: "Nhiệm vụ giải phóng dân tộc và cách mạng ruộng đất quan trọng ngang nhau nên phải đồng thời thực hiện hai nhiệm vụ",
+              c: true,
+            },
+            { p: "D", t: "Không có đáp án", c: false },
+          ],
+        },
+        {
+          q: "Câu 167. Luận điểm nào sau đây là đúng về nhiệm vụ cách mạng ruộng đất trong Cách mạng Tháng Tám năm 1945?",
+          opt: [
+            {
+              p: "A",
+              t: "Nhiệm vụ cách mạng ruộng đất được đặt lên hàng đầu",
+              c: false,
+            },
+            {
+              p: "B",
+              t: "Nhiệm vụ cách mạng ruộng đất được tạm gác lại nhằm phục vụ cho nhiệm vụ chống đế quốc",
+              c: true,
+            },
+            {
+              p: "C",
+              t: "Nhiệm vụ cách mạng ruộng đất được thực hiện cùng nhiệm vụ chống đế quốc",
+              c: false,
+            },
+          ],
+        },
+
+        /* STREAMING_CHUNK:Loading more questions... */
+        // Ảnh 3
+        {
+          q: "Câu 119. Khi quân Nhật tiến vào Đông Dương (9/1940), thực dân Pháp đã làm gì?",
+          opt: [
+            {
+              p: "A",
+              t: "Đón tiếp và bắt tay với Nhật để cùng cai trị Đông Dương",
+              c: false,
+            },
+            {
+              p: "B",
+              t: "Ráo riết chuẩn bị, chờ thời cơ phản công quân Nhật.",
+              c: false,
+            },
+            { p: "C", t: "Nhanh chóng đầu hàng.", c: true },
+            { p: "D", t: "Ra sức vơ vét, bóc lột nhân dân ta.", c: false },
+          ],
+        },
+        {
+          q: "Câu 120. Tháng 9/1940, sự kiện lịch sử nổi bật ở Đông Dương là:",
+          opt: [
+            { p: "A", t: "Phát xít Nhật vào Đông Dương", c: true },
+            {
+              p: "B",
+              t: "Nhật đảo chính Pháp, độc chiếm Đông Dương",
+              c: false,
+            },
+            {
+              p: "C",
+              t: "Thực dân Pháp thi hành chính sách thời chiến, tăng cường đàn áp, khủng bố cách mạng",
+              c: false,
+            },
+            {
+              p: "D",
+              t: "Các cuộc đấu tranh vũ trang của nhân dân liên tiếp diễn ra",
+              c: false,
+            },
+          ],
+        },
+        {
+          q: "Câu 121. Lá cờ đỏ sao vàng lần đầu tiên xuất hiện trong cuộc khởi nghĩa nào?",
+          opt: [
+            { p: "A", t: "Khởi nghĩa Bắc Sơn", c: false },
+            { p: "B", t: "Khởi nghĩa Nam Kỳ", c: true },
+            { p: "C", t: "Khởi nghĩa Ba Tơ", c: false },
+            { p: "D", t: "Binh biến Đô Lương", c: false },
+          ],
+        },
+        {
+          q: "Câu 122. Ban Chấp hành Trung ương Đảng xác định chuẩn bị khởi nghĩa vũ trang là nhiệm vụ trung tâm tại hội nghị nào?",
+          opt: [
+            { p: "A", t: "Hội nghị tháng 10/1930", c: false },
+            { p: "B", t: "Hội nghị tháng 11/1939", c: false },
+            { p: "C", t: "Hội nghị tháng 11/1941", c: false },
+            { p: "D", t: "Hội nghị tháng 5/1941", c: true },
+          ],
+        },
+        {
+          q: "Câu 123. Hội nghị lần thứ tám của Ban Chấp hành Trung ương Đảng Cộng sản Đông Dương (5/1941) được tổ chức ở đâu?",
+          opt: [
+            { p: "A", t: "Hà Quảng - Cao Bằng", c: true },
+            { p: "B", t: "Sơn Dương - Tuyên Quang", c: false },
+            { p: "C", t: "Định Hóa - Thái Nguyên", c: false },
+            { p: "D", t: "Từ Sơn - Bắc Ninh", c: false },
+          ],
+        },
+        {
+          q: "Câu 124. Hội nghị lần thứ tám của Ban Chấp hành Trung ương Đảng Cộng sản Đông Dương (5/1941) do đồng chí nào chủ trì?",
+          opt: [
+            { p: "A", t: "Đồng chí Nguyễn Ái Quốc", c: true },
+            { p: "B", t: "Đồng chí Võ Văn Tần", c: false },
+            { p: "C", t: "Đồng chí Trường Chinh", c: false },
+            { p: "D", t: "Đồng chí Lê Duẩn", c: false },
+          ],
+        },
+        {
+          q: "Câu 125. Hội nghị lần thứ tám của Ban Chấp hành Trung ương Đảng (5/1941) bầu đồng chí nào làm Tổng Bí thư?",
+          opt: [
+            { p: "A", t: "Đồng chí Nguyễn Ái Quốc", c: false },
+            { p: "B", t: "Đồng chí Võ Văn Tần", c: false },
+            { p: "C", t: "Đồng chí Trường Chinh", c: true },
+            { p: "D", t: "Đồng chí Lê Duẩn", c: false },
+          ],
+        },
+        {
+          q: "Câu 126. Hội nghị lần thứ tám của Ban Chấp hành Trung ương Đảng (5/1941) nhấn mạnh mâu thuẫn chủ yếu đòi hỏi phải được giải quyết cấp bách là:",
+          opt: [
+            {
+              p: "A",
+              t: "Mâu thuẫn giữa dân tộc Việt Nam với Pháp xâm lược",
+              c: false,
+            },
+            {
+              p: "B",
+              t: "Mâu thuẫn giữa dân tộc Việt Nam với phát xít Nhật",
+              c: false,
+            },
+            {
+              p: "C",
+              t: "Mâu thuẫn giữa dân tộc Việt Nam với Pháp và Nhật",
+              c: true,
+            },
+            {
+              p: "D",
+              t: "Mâu thuẫn giữa giai cấp nông dân và địa chủ phong kiến",
+              c: false,
+            },
+          ],
+        },
+        {
+          q: 'Câu 127. Trong cao trào cách mạng giải phóng dân tộc (1939 - 1945), hội nghị nào khẳng định dứt khoát chủ trương "phải thay đổi chiến lược"?',
+          opt: [
+            {
+              p: "A",
+              t: "Hội nghị Ban Chấp hành Trung ương 6 (11/1939)",
+              c: false,
+            },
+            {
+              p: "B",
+              t: "Hội nghị Ban Chấp hành Trung ương 7 (11/1940)",
+              c: false,
+            },
+            {
+              p: "C",
+              t: "Hội nghị Ban Chấp hành Trung ương 8 (5/1941)",
+              c: true,
+            },
+            { p: "D", t: "Hội nghị Toàn quốc (8/1945)", c: false },
+          ],
+        },
+
+        // Ảnh 4
+        {
+          q: "Câu 84. Nguyên nhân chủ yếu dẫn đến sự bùng nổ và phát triển của phong trào CMVN 1930 - 1931 là:",
+          opt: [
+            {
+              p: "A",
+              t: "Tác động tiêu cực của cuộc khủng hoảng kinh tế thế giới 1929 - 1933",
+              c: false,
+            },
+            {
+              p: "B",
+              t: "Chính sách khủng bố trắng của thực dân Pháp",
+              c: false,
+            },
+            {
+              p: "C",
+              t: "Chính sách tăng cường vơ vét bóc lột của thực dân Pháp",
+              c: false,
+            },
+            { p: "D", t: "Sự lãnh đạo của ĐCSVN", c: true },
+          ],
+        },
+        {
+          q: "Câu 85. Tổ chức mặt trận đầu tiên của CMVN để tập hợp, đoàn kết các giai cấp, tầng lớp dân tộc... là:",
+          opt: [
+            { p: "A", t: "Hội Việt Nam Cách mạng Thanh niên", c: false },
+            { p: "B", t: "Hội Phản đế đồng minh", c: true },
+            { p: "C", t: "Mặt trận Việt Nam độc lập đồng minh", c: false },
+            { p: "D", t: "Mặt trận Liên Việt", c: false },
+          ],
+        },
+        {
+          q: "Câu 86. Luận điểm nào sau đây không phải là kinh nghiệm rút ra từ phong trào cách mạng 1930 - 1931?",
+          opt: [
+            {
+              p: "A",
+              t: "Kinh nghiệm về kết hợp hai nhiệm vụ chiến lược phản đế và phản phong kiến",
+              c: false,
+            },
+            {
+              p: "B",
+              t: "Kinh nghiệm về kết hợp phong trào đấu tranh của công nhân với phong trào đấu tranh của nông dân",
+              c: false,
+            },
+            {
+              p: "C",
+              t: "Kinh nghiệm về kết hợp phong trào cách mạng ở nông thôn với phong trào cách mạng ở thành thị",
+              c: false,
+            },
+            {
+              p: "D",
+              t: "Kinh nghiệm về kết hợp đấu tranh vũ trang với đấu tranh ngoại giao",
+              c: true,
+            },
+          ],
+        },
+        {
+          q: "Câu 87. Luận điểm nào sau đây không phải là ý nghĩa lịch sử của phong trào cách mạng 1930 - 1931?",
+          opt: [
+            {
+              p: "A",
+              t: "Giải phóng một vùng đất đai rộng lớn làm căn cứ cho phong trào đấu tranh",
+              c: true,
+            },
+            {
+              p: "B",
+              t: "Khẳng định trong thực tế quyền lãnh đạo và năng lực lãnh đạo cách mạng của giai cấp vô sản",
+              c: false,
+            },
+            {
+              p: "C",
+              t: "Đem lại cho nông dân niềm tin vững chắc vào giai cấp vô sản",
+              c: false,
+            },
+            {
+              p: "D",
+              t: "Đem lại cho đông đảo quần chúng công nông niềm tin vào sức lực cách mạng vĩ đại của mình",
+              c: false,
+            },
+          ],
+        },
+        {
+          q: 'Câu 88. "Con đường của thanh niên chỉ có thể là con đường cách mạng" là câu nói trước lúc hy sinh của chiến sĩ cộng sản nào?',
+          opt: [
+            { p: "A", t: "Lý Tự Trọng", c: true },
+            { p: "B", t: "Nguyễn Đức Cảnh", c: false },
+            { p: "C", t: "Võ Thị Sáu", c: false },
+            { p: "D", t: "Nguyễn Thị Minh Khai", c: false },
+          ],
+        },
+        {
+          q: "Câu 89. Chương trình hành động của Đảng Cộng sản Đông Dương (6/1932) vạch ra nhiều nhiệm vụ đấu tranh trước mắt để:",
+          opt: [
+            {
+              p: "A",
+              t: "Phát triển tổ chức Đảng trên khắp đất nước",
+              c: false,
+            },
+            {
+              p: "B",
+              t: "Thúc đẩy các cuộc đấu tranh của nhân dân phát triển mạnh mẽ hơn nữa",
+              c: false,
+            },
+            {
+              p: "C",
+              t: "Khôi phục hệ thống tổ chức Đảng và phong trào cách mạng",
+              c: true,
+            },
+            {
+              p: "D",
+              t: "Đối phó lại với sự đàn áp, khủng bố của kẻ thù",
+              c: false,
+            },
+          ],
+        },
+        {
+          q: "Câu 90. ĐH ĐBTQ lần thứ I của Đảng diễn ra vào thời gian nào? Ở đâu?",
+          opt: [
+            { p: "A", t: "Tháng 3/1935 tại Ma Cao (Trung Quốc)", c: true },
+            { p: "B", t: "Tháng 7/1936 tại Ma Cao (Trung Quốc)", c: false },
+            { p: "C", t: "Tháng 3/1935 tại Hồng Kông (Trung Quốc)", c: false },
+            { p: "D", t: "Tháng 7/1936 tại Hồng Kông (Trung Quốc)", c: false },
+          ],
+        },
+        {
+          q: "Câu 91. ĐH ĐBTQ lần thứ I (3/1935) của Đảng Cộng sản Đông Dương đã bầu ai làm Tổng Bí thư?",
+          opt: [
+            { p: "A", t: "Trần Phú", c: false },
+            { p: "B", t: "Lê Hồng Phong", c: false },
+            { p: "C", t: "Hà Huy Tập", c: true },
+            { p: "D", t: "Nguyễn Văn Cừ", c: false },
+          ],
+        },
+
+        /* STREAMING_CHUNK:Loading more questions... */
+        // Ảnh 5 (Tiếp)
+        {
+          q: "Câu 92. Nội dung nào dưới đây không phải là nhiệm vụ trước mắt mà Đảng Cộng sản Đông Dương đề ra trong ĐH ĐBTQ lần thứ I (3/1935)?",
+          opt: [
+            { p: "A", t: "Củng cố và phát triển Đảng", c: false },
+            {
+              p: "B",
+              t: "Đẩy mạnh cuộc vận động tập hợp quần chúng",
+              c: false,
+            },
+            {
+              p: "C",
+              t: "Đẩy mạnh hoạt động đấu tranh giải phóng dân tộc",
+              c: true,
+            },
+            {
+              p: "D",
+              t: "Mở rộng tuyên truyền chống đế quốc, chống chiến tranh, ủng hộ Liên Xô và ủng hộ cách mạng Trung Quốc",
+              c: false,
+            },
+          ],
+        },
+        {
+          q: "Câu 93. ĐH ĐBTQ lần thứ I (3/1935) của Đảng Cộng sản Đông Dương đánh dấu:",
+          opt: [
+            {
+              p: "A",
+              t: "Bước ngoặt phát triển mới của cách mạng Đông Dương",
+              c: false,
+            },
+            {
+              p: "B",
+              t: "Bước trưởng thành mới của Đảng về mặt tổ chức và hoạch định đường lối cách mạng",
+              c: false,
+            },
+            {
+              p: "C",
+              t: "Sự phục hồi hệ thống tổ chức của Đảng và phong trào cách mạng quần chúng",
+              c: true,
+            },
+            {
+              p: "D",
+              t: "Đảng Cộng sản Đông Dương được Quốc tế Cộng sản công nhận là một chi bộ độc lập",
+              c: false,
+            },
+          ],
+        },
+        {
+          q: "Câu 94. Đại hội lần thứ VII (7/1935) của Quốc tế Cộng sản họp tại Matxcơva xác định nhiệm vụ trước mắt của giai cấp công nhân và nhân dân lao động thế giới là:",
+          opt: [
+            {
+              p: "A",
+              t: "Phát triển lực lượng cách mạng, tập trung chống chủ nghĩa đế quốc",
+              c: false,
+            },
+            {
+              p: "B",
+              t: "Đẩy mạnh cuộc đấu tranh giải phóng giai cấp ở các nước chính quốc và cuộc đấu tranh giải phóng dân tộc ở các nước thuộc địa",
+              c: false,
+            },
+            {
+              p: "C",
+              t: "Chống chủ nghĩa phát xít, chống chiến tranh, bảo vệ dân chủ và hòa bình",
+              c: true,
+            },
+            {
+              p: "D",
+              t: "Củng cố lực lượng cách mạng, đấu tranh chống chủ nghĩa đế quốc, chủ nghĩa phát xít",
+              c: false,
+            },
+          ],
+        },
+        {
+          q: "Câu 95. Ai là người dẫn đầu đoàn đại biểu của Đảng Cộng sản Đông Dương tham dự Đại hội VII Quốc tế Cộng sản tại Matxcơva (7/1935)?",
+          opt: [
+            { p: "A", t: "Lê Hồng Phong", c: true },
+            { p: "B", t: "Nguyễn Văn Cừ", c: false },
+            { p: "C", t: "Hà Huy Tập", c: false },
+            { p: "D", t: "Nguyễn Ái Quốc", c: false },
+          ],
+        },
+        {
+          q: "Câu 96. Hội nghị Ban Chấp hành Trung ương Đảng Cộng sản Đông Dương (7/1936) xác định nhiệm vụ trước mắt của cách mạng Đông Dương là:",
+          opt: [
+            { p: "A", t: "Chống đế quốc giành độc lập dân tộc", c: false },
+            {
+              p: "B",
+              t: "Chống phong kiến, chia ruộng đất cho dân cày",
+              c: false,
+            },
+            {
+              p: "C",
+              t: "Chống phát xít, chống chiến tranh đế quốc, chống phản động thuộc địa và tay sai",
+              c: true,
+            },
+            {
+              p: "D",
+              t: "Thành lập mặt trận nhân dân phản đế rộng rãi",
+              c: false,
+            },
+          ],
+        },
+        {
+          q: "Câu 97. Điều kiện nào tạo ra khả năng đấu tranh công khai, hợp pháp cho phong trào cách mạng Đông Dương giai đoạn 1936 - 1939?",
+          opt: [
+            {
+              p: "A",
+              t: "Sự xuất hiện chủ nghĩa phát xít và nguy cơ chiến tranh thế giới",
+              c: false,
+            },
+            {
+              p: "B",
+              t: "Chính phủ Mặt trận nhân dân Pháp lên cầm quyền",
+              c: true,
+            },
+            {
+              p: "C",
+              t: "Đảng Cộng sản Đông Dương đang phát triển mạnh mẽ tổ chức đảng và các tổ chức quần chúng rộng rãi",
+              c: false,
+            },
+            {
+              p: "D",
+              t: "Tinh thần đấu tranh của nhân dân ngày càng được nâng cao",
+              c: false,
+            },
+          ],
+        },
+        {
+          q: "Câu 98. Nguyên nhân chính của việc Đảng Cộng sản Đông Dương lãnh đạo đấu tranh đòi tự do, dân chủ, cơm áo và hòa bình công khai, hợp pháp thời kỳ 1936 - 1939?",
+          opt: [
+            {
+              p: "A",
+              t: "Chính phủ Mặt trận nhân dân Pháp ban bố nhiều quyền tự do, dân chủ, trong đó có những quyền được áp dụng ở thuộc địa",
+              c: true,
+            },
+            {
+              p: "B",
+              t: "Ở Đông Dương bọn trực tiếp cầm quyền và tay sai không chịu thi hành các chính sách tiến bộ của Chính phủ Mặt trận nhân dân Pháp",
+              c: false,
+            },
+            {
+              p: "C",
+              t: "Ở Đông Dương, nhiều tù chính trị cộng sản được trả tự do đã tích cực hoạt động thúc đẩy phong trào cách mạng phát triển",
+              c: false,
+            },
+            {
+              p: "D",
+              t: "Mọi tầng lớp xã hội đều mong muốn đấu tranh đòi tự do, dân chủ, cơm áo và hòa bình",
+              c: false,
+            },
+          ],
+        },
+
+        // Ảnh 6
+        {
+          q: "Câu 1. Nội dung nào của tình hình thế giới đã làm biến đổi Việt Nam sâu sắc ở cuối thế kỷ XIX đầu thế kỷ XX?",
+          opt: [
+            {
+              p: "A",
+              t: "CNTB chuyển từ giai đoạn tự do cạnh tranh sang giai đoạn đế quốc chủ nghĩa",
+              c: true,
+            },
+            {
+              p: "B",
+              t: "Sự phát triển của phong trào giải phóng dân tộc ở các nước thuộc địa",
+              c: false,
+            },
+            {
+              p: "C",
+              t: "Cách mạng Tháng Mười Nga thành công (1917)",
+              c: false,
+            },
+            { p: "D", t: "Sự ra đời của Quốc tế Cộng sản (1919)", c: false },
+          ],
+        },
+        {
+          q: "Câu 2. Thời gian và địa điểm thực dân Pháp nổ súng mở đầu cho cuộc chiến tranh xâm lược Việt Nam lần thứ nhất?",
+          opt: [
+            { p: "A", t: "1858 - tại Lăng Cô, Huế", c: false },
+            { p: "B", t: "1883 - tại Thanh Trì, Hà Nội", c: false },
+            { p: "C", t: "1858 - tại Sơn Trà, Đà Nẵng", c: true },
+            { p: "D", t: "1858 - tại chợ Bến Thành, Sài Gòn", c: false },
+          ],
+        },
+        {
+          q: 'Câu 3. Trước khi ra đi tìm đường cứu nước, người thanh niên yêu nước Nguyễn Tất Thành đã đánh giá Việt Nam trở thành "một xứ thuộc địa, dân ta là vong quốc nô..." là sau sự kiện nào?',
+          opt: [
+            {
+              p: "A",
+              t: "Thực dân Pháp nổ súng xâm lược Việt Nam (1/9/1858)",
+              c: false,
+            },
+            {
+              p: "B",
+              t: "Triều đình nhà Nguyễn kí hiệp ước thỏa hiệp với Pháp năm 1862",
+              c: false,
+            },
+            {
+              p: "C",
+              t: "Triều đình nhà Nguyễn kí hiệp ước Patenôtre với Pháp (6/6/1884)",
+              c: true,
+            },
+            {
+              p: "D",
+              t: "Thực dân Pháp thực hiện chính sách khai thác thuộc địa lần thứ nhất (1897 - 1914)",
+              c: false,
+            },
+          ],
+        },
+        {
+          q: "Câu 4. Trong xã hội phong kiến, mâu thuẫn nào là lớn nhất ở Việt Nam?",
+          opt: [
+            { p: "A", t: "Mâu thuẫn dân tộc", c: false },
+            { p: "B", t: "Mâu thuẫn dân tộc và giai cấp", c: false },
+            { p: "C", t: "Mâu thuẫn giai cấp", c: true },
+            { p: "D", t: "Không có mâu thuẫn nào", c: false },
+          ],
+        },
+        {
+          q: "Câu 5. Ở Việt Nam, mâu thuẫn nào kéo dài từ thời xã hội phong kiến sang xã hội thuộc địa nửa phong kiến?",
+          opt: [
+            { p: "A", t: "Mâu thuẫn giữa nông dân với địa chủ", c: true },
+            { p: "B", t: "Mâu thuẫn giữa vô sản với tư sản", c: false },
+            { p: "C", t: "Mâu thuẫn giữa địa chủ với tư sản", c: false },
+            { p: "D", t: "Mâu thuẫn giữa tiểu tư sản với tư sản", c: false },
+          ],
+        },
+        {
+          q: "Câu 6. Mâu thuẫn cơ bản và chủ yếu ở Việt Nam cuối thế kỷ XIX, đầu thế kỷ XX là?",
+          opt: [
+            {
+              p: "A",
+              t: "Mâu thuẫn giữa giai cấp nông dân với giai cấp địa chủ phong kiến",
+              c: false,
+            },
+            {
+              p: "B",
+              t: "Mâu thuẫn giữa giai cấp công nhân với giai cấp tư sản",
+              c: false,
+            },
+            {
+              p: "C",
+              t: "Mâu thuẫn giữa giai cấp công nhân và nông dân với thực dân Pháp",
+              c: false,
+            },
+            {
+              p: "D",
+              t: "Mâu thuẫn giữa dân tộc Việt Nam với thực dân Pháp và tay sai",
+              c: true,
+            },
+          ],
+        },
+        {
+          q: "Câu 7. Sau khi thực dân Pháp tiến hành cai trị nước ta, tính chất xã hội Việt Nam đã thay đổi như thế nào?",
+          opt: [
+            {
+              p: "A",
+              t: "Từ xã hội nửa phong kiến sang xã hội thuộc địa nửa phong kiến",
+              c: false,
+            },
+            {
+              p: "B",
+              t: "Từ xã hội nửa phong kiến sang xã hội thuộc địa",
+              c: false,
+            },
+            {
+              p: "C",
+              t: "Từ xã hội phong kiến sang xã hội thuộc địa",
+              c: false,
+            },
+            {
+              p: "D",
+              t: "Từ xã hội phong kiến sang xã hội thuộc địa nửa phong kiến",
+              c: true,
+            },
+          ],
+        },
+        {
+          q: "Câu 8. Những giai cấp, tầng lớp nào mới xuất hiện ở Việt Nam khi thực dân Pháp xâm lược và cai trị?",
+          opt: [
+            { p: "A", t: "Công nhân, tư sản, địa chủ phong kiến", c: false },
+            { p: "B", t: "Tư sản, tiểu tư sản", c: false },
+            { p: "C", t: "Công nhân, tư sản, tiểu tư sản", c: true },
+            { p: "D", t: "Nông dân, tư sản, công nhân", c: false },
+          ],
+        },
+
+        /* STREAMING_CHUNK:Loading the final batch of questions... */
+        // Ảnh 7
+        {
+          q: "Câu 44. Đông Dương Cộng sản Đảng và An Nam Cộng sản Đảng ra đời từ tổ chức tiền thân nào?",
+          opt: [
+            { p: "A", t: "Tân Việt Cách mạng Đảng", c: false },
+            { p: "B", t: "Hội Việt Nam Cách mạng Thanh niên", c: true },
+            { p: "C", t: "Hội truyền bá chữ quốc ngữ", c: false },
+            { p: "D", t: "Việt Nam Quốc dân Đảng", c: false },
+          ],
+        },
+        {
+          q: "Câu 45. Sự phát triển của phong trào công nhân Việt Nam giai đoạn 1926 - 1929 có ý nghĩa lớn nhất là:",
+          opt: [
+            {
+              p: "A",
+              t: "Chứng tỏ giai cấp công nhân Việt Nam đã đủ sức lãnh đạo phong trào cách mạng",
+              c: false,
+            },
+            {
+              p: "B",
+              t: "Chứng tỏ ý thức giác ngộ và lập trường cách mạng của giai cấp công nhân Việt Nam đã được nâng cao",
+              c: false,
+            },
+            {
+              p: "C",
+              t: "Là một yếu tố dẫn tới sự ra đời của ba tổ chức cộng sản đảng",
+              c: true,
+            },
+            {
+              p: "D",
+              t: "Thúc đẩy cuộc đấu tranh chống thực dân Pháp của cả dân tộc Việt Nam",
+              c: false,
+            },
+          ],
+        },
+        {
+          q: "Câu 46. Sự kiện nào đánh dấu phong trào công nhân Việt Nam chuyển từ đấu tranh tự phát lên đấu tranh tự giác?",
+          opt: [
+            {
+              p: "A",
+              t: "Năm 1920 (tổ chức Công hội ở Sài Gòn được thành lập)",
+              c: false,
+            },
+            { p: "B", t: "Năm 1925 (cuộc bãi công Ba Son)", c: true },
+            { p: "C", t: "Năm 1929 (sự ra đời ba tổ chức cộng sản)", c: false },
+            { p: "D", t: "Năm 1930 (ĐCSVN ra đời)", c: false },
+          ],
+        },
+        {
+          q: "Câu 47. Sự kiện nào đánh dấu phong trào công nhân Việt Nam hoàn toàn chuyển sang đấu tranh tự giác?",
+          opt: [
+            { p: "A", t: "Sự thành lập Công hội năm 1920", c: false },
+            {
+              p: "B",
+              t: "Cuộc bãi công của công nhân nhà máy đóng tàu Ba Son tháng 8/1925",
+              c: false,
+            },
+            { p: "C", t: "Phong trào vô sản hóa cuối năm 1928", c: false },
+            { p: "D", t: "ĐCSVN ra đời đầu năm 1930", c: true },
+          ],
+        },
+        {
+          q: "Câu 48. Yêu cầu cấp thiết của CMVN ở cuối năm 1929 đầu năm 1930 là:",
+          opt: [
+            { p: "A", t: "Đề cao nhiệm vụ giải phóng dân tộc", c: false },
+            {
+              p: "B",
+              t: "Đề cao nhiệm vụ giải phóng dân tộc và xây dựng CNXH",
+              c: false,
+            },
+            {
+              p: "C",
+              t: "Khắc phục sự chia rẽ, phân tán của ba tổ chức cộng sản",
+              c: true,
+            },
+            {
+              p: "D",
+              t: "Khắc phục những tiêu cực trong hoạt động của giai cấp vô sản",
+              c: false,
+            },
+          ],
+        },
+        {
+          q: "Câu 49. Điểm chung trong khuynh hướng đấu tranh của ba tổ chức cộng sản ra đời cuối năm 1929 ở Việt Nam là:",
+          opt: [
+            { p: "A", t: "Theo khuynh hướng vô sản", c: true },
+            { p: "B", t: "Theo khuynh hướng tư sản", c: false },
+            { p: "C", t: "Theo khuynh hướng phong kiến", c: false },
+            { p: "D", t: "Theo khuynh hướng không tưởng", c: false },
+          ],
+        },
+        {
+          q: "Câu 50. Chi bộ cộng sản đầu tiên ra đời (3/1929) tại Bắc Kỳ đã chứng tỏ điều gì?",
+          opt: [
+            { p: "A", t: "Sự nhạy bén về chính trị của các hội viên", c: true },
+            {
+              p: "B",
+              t: "Khuynh hướng cách mạng tư sản đang suy yếu",
+              c: false,
+            },
+            {
+              p: "C",
+              t: "Khuynh hướng cách mạng tư sản đang phát triển",
+              c: false,
+            },
+            {
+              p: "D",
+              t: "Khuynh hướng cách mạng vô sản đang phát triển",
+              c: false,
+            },
+          ],
+        },
+
+        // Ảnh 8
+        {
+          q: "Câu 51. Luận điểm nào sau đây không thể hiện đúng ý nghĩa về sự ra đời của ba tổ chức cộng sản ở Việt Nam vào cuối năm 1929?",
+          opt: [
+            {
+              p: "A",
+              t: "Khẳng định bước phát triển về chất của phong trào yêu nước Việt Nam theo khuynh hướng cách mạng vô sản",
+              c: false,
+            },
+            { p: "B", t: "Là bước chuẩn bị cho sự ra đời của ĐCSVN", c: false },
+            {
+              p: "C",
+              t: "Phản ánh sự phát triển của phong trào công nhân và phong trào yêu nước",
+              c: false,
+            },
+            { p: "D", t: "Là bước ngoặt vĩ đại trong lịch sử CMVN", c: true },
+          ],
+        },
+        {
+          q: "Câu 52. CMVN rút ra được bài học chủ yếu nào từ sự chia rẽ của ba tổ chức cộng sản ở cuối năm 1929?",
+          opt: [
+            { p: "A", t: "Xây dựng khối đoàn kết trong Đảng", c: false },
+            { p: "B", t: "Thống nhất trong lực lượng lãnh đạo", c: true },
+            { p: "C", t: "Xây dựng khối liên minh công - nông", c: false },
+            {
+              p: "D",
+              t: "Khoét sâu vào mâu thuẫn trong hàng ngũ kẻ thù",
+              c: false,
+            },
+          ],
+        },
+        {
+          q: "Câu 53. Những tổ chức cộng sản Đảng nào đã tham dự Hội nghị hợp nhất diễn ra từ ngày 6/1/1930 đến 7/2/1930?",
+          opt: [
+            {
+              p: "A",
+              t: "Đông Dương Cộng sản Đảng, Đông Dương Cộng sản Liên đoàn",
+              c: false,
+            },
+            {
+              p: "B",
+              t: "Đông Dương Cộng sản Đảng, An Nam Cộng sản Đảng",
+              c: true,
+            },
+            {
+              p: "C",
+              t: "An Nam Cộng sản Đảng, Đông Dương Cộng sản Liên đoàn",
+              c: false,
+            },
+            {
+              p: "D",
+              t: "Đông Dương Cộng sản Đảng, An Nam Cộng sản Đảng, Đông Dương Cộng sản Liên đoàn",
+              c: false,
+            },
+          ],
+        },
+        {
+          q: "Câu 54. Tổ chức cộng sản nào không có đại biểu tham dự Hội nghị hợp nhất thành lập Đảng diễn ra ngày 6/1/1930 đến ngày 7/2/1930?",
+          opt: [
+            { p: "A", t: "Đông Dương Cộng sản Đảng", c: false },
+            { p: "B", t: "An Nam Cộng sản Đảng", c: false },
+            { p: "C", t: "Đông Dương Cộng sản Liên đoàn", c: true },
+            { p: "D", t: "Không có đáp án", c: false },
+          ],
+        },
+        {
+          q: "Câu 55. Sự ra đời và hoạt động của ba tổ chức cộng sản đảng ở Việt Nam vào nửa cuối năm 1929 có hạn chế lớn nhất là:",
+          opt: [
+            {
+              p: "A",
+              t: "Không thống nhất về khuynh hướng đấu tranh cách mạng",
+              c: false,
+            },
+            {
+              p: "B",
+              t: "Hoạt động riêng rẽ, tranh giành ảnh hưởng với nhau",
+              c: true,
+            },
+            { p: "C", t: "Hoạt động cục bộ mang tính vùng miền", c: false },
+            { p: "D", t: "Khác biệt về mục tiêu đấu tranh", c: false },
+          ],
+        },
+        {
+          q: "Câu 56. Hội nghị hợp nhất các tổ chức cộng sản diễn ra ở đâu?",
+          opt: [
+            { p: "A", t: "Hà Quảng - Cao Bằng", c: false },
+            { p: "B", t: "Hàm Long - Hà Nội", c: false },
+            { p: "C", t: "Hương Cảng - Trung Quốc", c: true },
+            { p: "D", t: "Ma Cao - Trung Quốc", c: false },
+          ],
+        },
+        {
+          q: "Câu 57. Nội dung nào sau đây không thuộc Hội nghị hợp nhất các tổ chức cộng sản đầu năm 1930?",
+          opt: [
+            {
+              p: "A",
+              t: "Hợp nhất các tổ chức cộng sản thành một chính đảng duy nhất của Việt Nam",
+              c: false,
+            },
+            {
+              p: "B",
+              t: "Thông qua nội dung Cương lĩnh chính trị do Nguyễn Ái Quốc soạn thảo",
+              c: false,
+            },
+            {
+              p: "C",
+              t: "Định kế hoạch thực hiện việc thống nhất trong nước",
+              c: true,
+            },
+            { p: "D", t: "Bầu Ban Chấp hành Trung ương chính thức", c: false },
+          ],
+        },
+        {
+          q: "Câu 58. Vai trò của Nguyễn Ái Quốc trong Hội nghị hợp nhất các tổ chức cộng sản:",
+          opt: [
+            { p: "A", t: "Chủ trì hội nghị", c: true },
+            { p: "B", t: "Quan sát viên của Quốc tế Cộng sản", c: false },
+            { p: "C", t: "Khách mời của hội nghị", c: false },
+            { p: "D", t: "Đại biểu tham dự hội nghị", c: false },
+          ],
+        },
+        {
+          q: "Câu 59. Đối với ĐCSVN, Hội nghị thành lập đảng đầu năm 1930 có giá trị như:",
+          opt: [
+            { p: "A", t: "Sự kiện lịch sử lớn của dân tộc", c: false },
+            { p: "B", t: "Một Đại hội Đảng", c: true },
+            { p: "C", t: "Một bước ngoặt quan trọng của CMVN", c: false },
+            {
+              p: "D",
+              t: "Một sự kiện lịch sử của dân tộc Việt Nam mang tầm cỡ quốc tế",
+              c: false,
+            },
+          ],
+        },
+      ];
+
+      /* STREAMING_CHUNK:Initializing state and UI... */
+      let currentSlideIndex = 0;
+      let score = 0;
+      const answeredQuestions = new Set();
+      const slidesContainer = document.getElementById("slides-container");
+      const prevBtn = document.getElementById("prevBtn");
+      const nextBtn = document.getElementById("nextBtn");
+      const progressText = document.getElementById("progress-text");
+      const progressBar = document.getElementById("progress-bar");
+      const scoreDisplay = document.getElementById("score");
+
+      function initQuiz() {
+        questionsData.forEach((qData, index) => {
+          const slideDiv = document.createElement("div");
+          slideDiv.className = `slide ${index === 0 ? "active" : ""}`;
+          slideDiv.id = `slide-${index}`;
+
+          let optionsHtml = "";
+          qData.opt.forEach((opt, optIndex) => {
+            optionsHtml += `
+                    <div class="option" id="opt-${index}-${optIndex}" onclick="checkAnswer(${index}, ${optIndex}, ${opt.c})">
+                        <span class="prefix">${opt.p}.</span>
+                        <span class="text">${opt.t}</span>
+                    </div>
+                `;
+          });
+
+          slideDiv.innerHTML = `
+                <div class="question">${qData.q}</div>
+                <div class="options">
+                    ${optionsHtml}
+                </div>
+            `;
+
+          slidesContainer.appendChild(slideDiv);
+        });
+        updateControls();
+      }
+
+      /* STREAMING_CHUNK:Handling interactions... */
+      function checkAnswer(slideIndex, optIndex, isCorrect) {
+        // Prevent answering multiple times on the same question
+        if (answeredQuestions.has(slideIndex)) return;
+
+        answeredQuestions.add(slideIndex);
+
+        const slide = document.getElementById(`slide-${slideIndex}`);
+        const clickedOption = document.getElementById(
+          `opt-${slideIndex}-${optIndex}`,
+        );
+        const allOptions = slide.querySelectorAll(".option");
+
+        // Disable all options visually
+        allOptions.forEach((opt) => opt.classList.add("disabled"));
+
+        if (isCorrect) {
+          clickedOption.classList.add("correct");
+          score++;
+          scoreDisplay.innerText = score;
+        } else {
+          clickedOption.classList.add("wrong");
+          // Find and highlight the correct one
+          questionsData[slideIndex].opt.forEach((opt, idx) => {
+            if (opt.c) {
+              document
+                .getElementById(`opt-${slideIndex}-${idx}`)
+                .classList.add("correct");
+            } else if (idx !== optIndex) {
+              document
+                .getElementById(`opt-${slideIndex}-${idx}`)
+                .classList.add("faded");
+            }
+          });
+        }
+      }
+
+      function showSlide(index) {
+        const slides = document.querySelectorAll(".slide");
+        slides.forEach((s) => s.classList.remove("active"));
+        slides[index].classList.add("active");
+        currentSlideIndex = index;
+        updateControls();
+
+        // Auto scroll to top of question
+        slidesContainer.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function nextSlide() {
+        if (currentSlideIndex < questionsData.length - 1) {
+          showSlide(currentSlideIndex + 1);
+        }
+      }
+
+      function prevSlide() {
+        if (currentSlideIndex > 0) {
+          showSlide(currentSlideIndex - 1);
+        }
+      }
+
+      function updateControls() {
+        prevBtn.disabled = currentSlideIndex === 0;
+        nextBtn.disabled = currentSlideIndex === questionsData.length - 1;
+        progressText.innerText = `${currentSlideIndex + 1} / ${questionsData.length}`;
+        progressBar.style.width = `${((currentSlideIndex + 1) / questionsData.length) * 100}%`;
+      }
+
+      // Keyboard support
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "ArrowRight") {
+          nextSlide();
+        } else if (event.key === "ArrowLeft") {
+          prevSlide();
+        }
+      });
+
+      // Run initialization
+      initQuiz();
+    </script>
+  </body>
+</html>
